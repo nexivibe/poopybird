@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew lwjgl3:build:*)",
+      "Bash(timeout 15 ./gradlew lwjgl3:run:*)",
+      "Bash(timeout:*)"
+    ]
+  }
+}
