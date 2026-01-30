@@ -3,10 +3,12 @@ package ape.poopybird.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import ape.poopybird.Main;
 import ape.poopybird.util.Constants;
 
@@ -18,19 +20,29 @@ public class SplashScreen implements Screen {
     private final GlyphLayout layout;
     private float elapsedTime;
 
+    private final OrthographicCamera camera;
+    private final ExtendViewport viewport;
+
+    private static final float VIRTUAL_WIDTH = 800;
+    private static final float VIRTUAL_HEIGHT = 600;
+
     public SplashScreen(Main game) {
         this.game = game;
         this.batch = new SpriteBatch();
+
         this.titleFont = new BitmapFont();
-        this.titleFont.getData().setScale(4f);
+        this.titleFont.getData().setScale(5f);
         this.titleFont.setColor(Color.WHITE);
 
         this.subtitleFont = new BitmapFont();
-        this.subtitleFont.getData().setScale(1.5f);
+        this.subtitleFont.getData().setScale(2f);
         this.subtitleFont.setColor(Color.LIGHT_GRAY);
 
         this.layout = new GlyphLayout();
         this.elapsedTime = 0;
+
+        this.camera = new OrthographicCamera();
+        this.viewport = new ExtendViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, camera);
     }
 
     @Override
@@ -53,8 +65,9 @@ public class SplashScreen implements Screen {
 
         ScreenUtils.clear(0.1f, 0.1f, 0.15f, 1f);
 
-        float screenWidth = Gdx.graphics.getWidth();
-        float screenHeight = Gdx.graphics.getHeight();
+        viewport.apply();
+        camera.update();
+        batch.setProjectionMatrix(camera.combined);
 
         batch.begin();
 
@@ -63,22 +76,23 @@ public class SplashScreen implements Screen {
         String title = "PoopyBird";
         layout.setText(titleFont, title);
         titleFont.draw(batch, title,
-            (screenWidth - layout.width) / 2,
-            screenHeight / 2 + layout.height);
+            (VIRTUAL_WIDTH - layout.width) / 2,
+            VIRTUAL_HEIGHT / 2 + layout.height);
 
         // Subtitle
         subtitleFont.setColor(0.7f, 0.7f, 0.7f, alpha);
         String subtitle = "The Ultimate Aerial Bombardment Simulator";
         layout.setText(subtitleFont, subtitle);
         subtitleFont.draw(batch, subtitle,
-            (screenWidth - layout.width) / 2,
-            screenHeight / 2 - 30);
+            (VIRTUAL_WIDTH - layout.width) / 2,
+            VIRTUAL_HEIGHT / 2 - 40);
 
         batch.end();
     }
 
     @Override
     public void resize(int width, int height) {
+        viewport.update(width, height, true);
     }
 
     @Override

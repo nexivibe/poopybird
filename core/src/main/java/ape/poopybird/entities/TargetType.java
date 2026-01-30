@@ -1,12 +1,13 @@
 package ape.poopybird.entities;
 
 public enum TargetType {
-    PERSON("Person", 100, 50, 25, 0.3f, 0.6f, 1.0f, 1.8f),
-    CAR("Car", 75, 40, 20, 0.8f, 1.5f, 2.5f, 1.2f),
-    BENCH("Bench", 60, 30, 15, 0.5f, 1.0f, 1.5f, 0.8f),
-    STATUE("Statue", 150, 75, 35, 0.4f, 0.8f, 1.2f, 3.0f),
-    UMBRELLA("Umbrella", 80, 40, 20, 0.6f, 1.2f, 1.8f, 2.2f),
-    PICNIC("Picnic", 50, 25, 10, 1.0f, 2.0f, 3.0f, 0.3f);
+    // Larger hit zones for easier gameplay (kid/elderly friendly)
+    PERSON("Person", 100, 50, 25, 1.5f, 3.0f, 5.0f, 1.8f),
+    CAR("Car", 75, 40, 20, 2.5f, 5.0f, 8.0f, 1.2f),
+    BENCH("Bench", 60, 30, 15, 2.0f, 4.0f, 6.0f, 0.8f),
+    STATUE("Statue", 150, 75, 35, 1.8f, 3.5f, 5.5f, 3.0f),
+    UMBRELLA("Umbrella", 80, 40, 20, 2.5f, 5.0f, 7.5f, 2.2f),
+    PICNIC("Picnic", 50, 25, 10, 4.0f, 7.0f, 10.0f, 0.3f);
 
     private final String displayName;
     private final int centerScore;

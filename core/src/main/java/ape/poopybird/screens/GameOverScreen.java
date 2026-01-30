@@ -4,11 +4,14 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import ape.poopybird.Main;
 import ape.poopybird.entities.BirdType;
 import ape.poopybird.ui.MenuButton;
@@ -24,7 +27,14 @@ public class GameOverScreen implements Screen {
     private final BitmapFont titleFont;
     private final BitmapFont scoreFont;
     private final BitmapFont buttonFont;
+    private final BitmapFont smallFont;
     private final GlyphLayout layout;
+
+    private final OrthographicCamera camera;
+    private final ExtendViewport viewport;
+
+    private static final float VIRTUAL_WIDTH = 800;
+    private static final float VIRTUAL_HEIGHT = 600;
 
     private MenuButton replayButton;
     private MenuButton selectBirdButton;
@@ -39,28 +49,32 @@ public class GameOverScreen implements Screen {
         this.shapeRenderer = new ShapeRenderer();
 
         this.titleFont = new BitmapFont();
-        this.titleFont.getData().setScale(4f);
+        this.titleFont.getData().setScale(5f);
 
         this.scoreFont = new BitmapFont();
-        this.scoreFont.getData().setScale(2f);
+        this.scoreFont.getData().setScale(2.5f);
 
         this.buttonFont = new BitmapFont();
-        this.buttonFont.getData().setScale(1.5f);
+        this.buttonFont.getData().setScale(1.8f);
+
+        this.smallFont = new BitmapFont();
+        this.smallFont.getData().setScale(1.2f);
 
         this.layout = new GlyphLayout();
+
+        this.camera = new OrthographicCamera();
+        this.viewport = new ExtendViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, camera);
 
         createButtons();
     }
 
     private void createButtons() {
-        float screenWidth = Gdx.graphics.getWidth();
-        float screenHeight = Gdx.graphics.getHeight();
-        float buttonWidth = 180;
-        float buttonHeight = 45;
-        float buttonY = screenHeight * 0.25f;
-        float spacing = 20;
+        float buttonWidth = 200;
+        float buttonHeight = 55;
+        float buttonY = 80;
+        float spacing = 25;
         float totalWidth = 3 * buttonWidth + 2 * spacing;
-        float startX = (screenWidth - totalWidth) / 2;
+        float startX = (VIRTUAL_WIDTH - totalWidth) / 2;
 
         replayButton = new MenuButton(startX, buttonY, buttonWidth, buttonHeight, "PLAY AGAIN", buttonFont);
         selectBirdButton = new MenuButton(startX + buttonWidth + spacing, buttonY, buttonWidth, buttonHeight, "SELECT BIRD", buttonFont);
@@ -75,15 +89,18 @@ public class GameOverScreen implements Screen {
     public void render(float delta) {
         ScreenUtils.clear(0.1f, 0.1f, 0.15f, 1f);
 
-        float screenWidth = Gdx.graphics.getWidth();
-        float screenHeight = Gdx.graphics.getHeight();
+        viewport.apply();
+        camera.update();
+
+        // Convert mouse coordinates
         float mouseX = Gdx.input.getX();
-        float mouseY = screenHeight - Gdx.input.getY();
+        float mouseY = Gdx.input.getY();
+        Vector2 worldCoords = viewport.unproject(new Vector2(mouseX, mouseY));
 
         // Update button hover states
-        replayButton.setHovered(replayButton.contains(mouseX, mouseY));
-        selectBirdButton.setHovered(selectBirdButton.contains(mouseX, mouseY));
-        menuButton.setHovered(menuButton.contains(mouseX, mouseY));
+        replayButton.setHovered(replayButton.contains(worldCoords.x, worldCoords.y));
+        selectBirdButton.setHovered(selectBirdButton.contains(worldCoords.x, worldCoords.y));
+        menuButton.setHovered(menuButton.contains(worldCoords.x, worldCoords.y));
 
         // Handle clicks
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
@@ -115,6 +132,10 @@ public class GameOverScreen implements Screen {
             return;
         }
 
+        // Set projection matrices
+        shapeRenderer.setProjectionMatrix(camera.combined);
+        batch.setProjectionMatrix(camera.combined);
+
         // Draw content
         batch.begin();
 
@@ -122,40 +143,40 @@ public class GameOverScreen implements Screen {
         titleFont.setColor(Color.WHITE);
         String title = "GAME OVER";
         layout.setText(titleFont, title);
-        titleFont.draw(batch, title, (screenWidth - layout.width) / 2, screenHeight - 60);
+        titleFont.draw(batch, title, (VIRTUAL_WIDTH - layout.width) / 2, VIRTUAL_HEIGHT - 50);
 
         // Final score
         scoreFont.setColor(Color.YELLOW);
         String scoreText = "Final Score: " + gameState.getScore();
         layout.setText(scoreFont, scoreText);
-        scoreFont.draw(batch, scoreText, (screenWidth - layout.width) / 2, screenHeight - 140);
+        scoreFont.draw(batch, scoreText, (VIRTUAL_WIDTH - layout.width) / 2, VIRTUAL_HEIGHT - 130);
 
         // Stats
         scoreFont.setColor(Color.WHITE);
-        float statsY = screenHeight - 200;
-        float lineHeight = 35;
+        float statsY = VIRTUAL_HEIGHT - 200;
+        float lineHeight = 40;
 
         String birdText = "Bird: " + birdType.getDisplayName();
         layout.setText(scoreFont, birdText);
-        scoreFont.draw(batch, birdText, (screenWidth - layout.width) / 2, statsY);
+        scoreFont.draw(batch, birdText, (VIRTUAL_WIDTH - layout.width) / 2, statsY);
 
         String poopsText = "Poops Dropped: " + gameState.getPoopCount();
         layout.setText(scoreFont, poopsText);
-        scoreFont.draw(batch, poopsText, (screenWidth - layout.width) / 2, statsY - lineHeight);
+        scoreFont.draw(batch, poopsText, (VIRTUAL_WIDTH - layout.width) / 2, statsY - lineHeight);
 
         String hitsText = "Targets Hit: " + gameState.getHitCount();
         layout.setText(scoreFont, hitsText);
-        scoreFont.draw(batch, hitsText, (screenWidth - layout.width) / 2, statsY - lineHeight * 2);
+        scoreFont.draw(batch, hitsText, (VIRTUAL_WIDTH - layout.width) / 2, statsY - lineHeight * 2);
 
         String accuracyText = String.format("Accuracy: %.1f%%", gameState.getAccuracy());
         layout.setText(scoreFont, accuracyText);
-        scoreFont.draw(batch, accuracyText, (screenWidth - layout.width) / 2, statsY - lineHeight * 3);
+        scoreFont.draw(batch, accuracyText, (VIRTUAL_WIDTH - layout.width) / 2, statsY - lineHeight * 3);
 
         // Rating based on score
         scoreFont.setColor(getRatingColor());
         String rating = getRating();
         layout.setText(scoreFont, rating);
-        scoreFont.draw(batch, rating, (screenWidth - layout.width) / 2, statsY - lineHeight * 4.5f);
+        scoreFont.draw(batch, rating, (VIRTUAL_WIDTH - layout.width) / 2, statsY - lineHeight * 4.5f);
 
         batch.end();
 
@@ -166,10 +187,10 @@ public class GameOverScreen implements Screen {
 
         // Hint
         batch.begin();
-        buttonFont.setColor(Color.GRAY);
+        smallFont.setColor(Color.GRAY);
         String hint = "Press R or ENTER to play again, ESC for menu";
-        layout.setText(buttonFont, hint);
-        buttonFont.draw(batch, hint, (screenWidth - layout.width) / 2, 40);
+        layout.setText(smallFont, hint);
+        smallFont.draw(batch, hint, (VIRTUAL_WIDTH - layout.width) / 2, 40);
         batch.end();
     }
 
@@ -196,7 +217,7 @@ public class GameOverScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-        createButtons();
+        viewport.update(width, height, true);
     }
 
     @Override
@@ -218,5 +239,6 @@ public class GameOverScreen implements Screen {
         titleFont.dispose();
         scoreFont.dispose();
         buttonFont.dispose();
+        smallFont.dispose();
     }
 }

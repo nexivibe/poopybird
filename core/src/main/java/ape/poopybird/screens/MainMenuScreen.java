@@ -4,11 +4,13 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import ape.poopybird.Main;
 import ape.poopybird.ui.MenuButton;
 
@@ -18,7 +20,14 @@ public class MainMenuScreen implements Screen {
     private final ShapeRenderer shapeRenderer;
     private final BitmapFont titleFont;
     private final BitmapFont buttonFont;
+    private final BitmapFont smallFont;
     private final GlyphLayout layout;
+
+    private final OrthographicCamera camera;
+    private final ExtendViewport viewport;
+
+    private static final float VIRTUAL_WIDTH = 800;
+    private static final float VIRTUAL_HEIGHT = 600;
 
     private MenuButton playButton;
     private MenuButton quitButton;
@@ -29,25 +38,29 @@ public class MainMenuScreen implements Screen {
         this.shapeRenderer = new ShapeRenderer();
 
         this.titleFont = new BitmapFont();
-        this.titleFont.getData().setScale(4f);
+        this.titleFont.getData().setScale(5f);
 
         this.buttonFont = new BitmapFont();
-        this.buttonFont.getData().setScale(2f);
+        this.buttonFont.getData().setScale(2.5f);
+
+        this.smallFont = new BitmapFont();
+        this.smallFont.getData().setScale(1.5f);
 
         this.layout = new GlyphLayout();
+
+        this.camera = new OrthographicCamera();
+        this.viewport = new ExtendViewport(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, camera);
 
         createButtons();
     }
 
     private void createButtons() {
-        float screenWidth = Gdx.graphics.getWidth();
-        float screenHeight = Gdx.graphics.getHeight();
-        float buttonWidth = 200;
-        float buttonHeight = 50;
-        float centerX = (screenWidth - buttonWidth) / 2;
+        float buttonWidth = 250;
+        float buttonHeight = 60;
+        float centerX = (VIRTUAL_WIDTH - buttonWidth) / 2;
 
-        playButton = new MenuButton(centerX, screenHeight / 2, buttonWidth, buttonHeight, "PLAY", buttonFont);
-        quitButton = new MenuButton(centerX, screenHeight / 2 - 70, buttonWidth, buttonHeight, "QUIT", buttonFont);
+        playButton = new MenuButton(centerX, VIRTUAL_HEIGHT / 2 - 20, buttonWidth, buttonHeight, "PLAY", buttonFont);
+        quitButton = new MenuButton(centerX, VIRTUAL_HEIGHT / 2 - 100, buttonWidth, buttonHeight, "QUIT", buttonFont);
     }
 
     @Override
@@ -58,15 +71,16 @@ public class MainMenuScreen implements Screen {
     public void render(float delta) {
         ScreenUtils.clear(0.1f, 0.15f, 0.2f, 1f);
 
-        float screenWidth = Gdx.graphics.getWidth();
-        float screenHeight = Gdx.graphics.getHeight();
+        viewport.apply();
+        camera.update();
 
-        // Handle input
+        // Convert mouse coordinates to world coordinates
         float mouseX = Gdx.input.getX();
-        float mouseY = screenHeight - Gdx.input.getY(); // Flip Y
+        float mouseY = Gdx.input.getY();
+        com.badlogic.gdx.math.Vector2 worldCoords = viewport.unproject(new com.badlogic.gdx.math.Vector2(mouseX, mouseY));
 
-        playButton.setHovered(playButton.contains(mouseX, mouseY));
-        quitButton.setHovered(quitButton.contains(mouseX, mouseY));
+        playButton.setHovered(playButton.contains(worldCoords.x, worldCoords.y));
+        quitButton.setHovered(quitButton.contains(worldCoords.x, worldCoords.y));
 
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             if (playButton.isHovered()) {
@@ -88,18 +102,22 @@ public class MainMenuScreen implements Screen {
             return;
         }
 
+        // Render with camera
+        shapeRenderer.setProjectionMatrix(camera.combined);
+        batch.setProjectionMatrix(camera.combined);
+
         // Draw title
         batch.begin();
         titleFont.setColor(Color.WHITE);
         String title = "PoopyBird";
         layout.setText(titleFont, title);
-        titleFont.draw(batch, title, (screenWidth - layout.width) / 2, screenHeight - 80);
+        titleFont.draw(batch, title, (VIRTUAL_WIDTH - layout.width) / 2, VIRTUAL_HEIGHT - 60);
 
-        // Instructions
-        buttonFont.setColor(Color.LIGHT_GRAY);
-        String instructions = "Drop poop on targets for points!";
-        layout.setText(buttonFont, instructions);
-        buttonFont.draw(batch, instructions, (screenWidth - layout.width) / 2, screenHeight - 150);
+        // Tagline
+        buttonFont.setColor(new Color(0.8f, 0.9f, 0.8f, 1f));
+        String tagline = "Bombs Away!";
+        layout.setText(buttonFont, tagline);
+        buttonFont.draw(batch, tagline, (VIRTUAL_WIDTH - layout.width) / 2, VIRTUAL_HEIGHT - 140);
         batch.end();
 
         // Draw buttons
@@ -108,18 +126,16 @@ public class MainMenuScreen implements Screen {
 
         // Controls info at bottom
         batch.begin();
-        buttonFont.setColor(Color.GRAY);
-        buttonFont.getData().setScale(1f);
-        String controls = "Controls: WASD/Mouse to move | SPACE/Click to poop";
-        layout.setText(buttonFont, controls);
-        buttonFont.draw(batch, controls, (screenWidth - layout.width) / 2, 40);
-        buttonFont.getData().setScale(2f);
+        smallFont.setColor(Color.GRAY);
+        String controls = "Controls: WASD or Arrow Keys to fly | SPACE or Click to poop";
+        layout.setText(smallFont, controls);
+        smallFont.draw(batch, controls, (VIRTUAL_WIDTH - layout.width) / 2, 50);
         batch.end();
     }
 
     @Override
     public void resize(int width, int height) {
-        createButtons();
+        viewport.update(width, height, true);
     }
 
     @Override
@@ -140,5 +156,6 @@ public class MainMenuScreen implements Screen {
         shapeRenderer.dispose();
         titleFont.dispose();
         buttonFont.dispose();
+        smallFont.dispose();
     }
 }
